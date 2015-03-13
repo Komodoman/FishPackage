@@ -1,4 +1,6 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Kyle Bryant @Komdoman
+// Use wherever your heart desires <3
+
 #include "FlockFish.h"
 #include "OceanDemo.h"
 
@@ -9,6 +11,12 @@ class AFlockFish;
 /**
  * 
  */
+
+/////////////////////////////////////////////////////////////////////////////
+//////////////                                        //////////////////////            
+//////////////            Fish State		          /////////////////////                                 
+//////////////                                        ////////////////////              
+/////////////////////////////////////////////////////////////////////////
 class OCEANDEMO_API FishState
 {
 protected:
@@ -25,6 +33,13 @@ public:
 	virtual void HandleOverlapEvent(AActor *otherActor, UPrimitiveComponent *otherComponent, FString aColliderString){};
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+//////////////                                        //////////////////////            
+//////////////            Fish Seek State             /////////////////////                                 
+//////////////                                        ////////////////////              
+/////////////////////////////////////////////////////////////////////////
+
 class OCEANDEMO_API SeekState : public FishState
 {
 public:
@@ -37,6 +52,13 @@ protected:
 	virtual void SeekTarget(float delta);
 	virtual void Flock(float delta);
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+//////////////                                        //////////////////////            
+//////////////            Fish Flee State             /////////////////////                                 
+//////////////                                        ////////////////////              
+/////////////////////////////////////////////////////////////////////////
 
 class OCEANDEMO_API FleeState : public FishState
 {
@@ -56,6 +78,13 @@ protected:
 	virtual void FleeFromEnemy(float delta);
 
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+//////////////                                        //////////////////////            
+//////////////            Fish Chase State            /////////////////////                                 
+//////////////                                        ////////////////////              
+/////////////////////////////////////////////////////////////////////////
 
 class OCEANDEMO_API ChaseState : public FishState
 {

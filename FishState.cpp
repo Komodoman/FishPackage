@@ -1,4 +1,5 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Kyle Bryant @Komdoman
+// Use wherever your heart desires <3
 
 #include "OceanDemo.h"
 #include "FlockFish.h"
@@ -32,7 +33,7 @@ void SeekState::Update(float delta)
 void SeekState::SeekTarget(float delta)
 {	
 	// Set Speed
-	Fish->curSpeed = FMath::Lerp(Fish->curSpeed, Fish->speed, delta);
+	Fish->curSpeed = FMath::Lerp(Fish->curSpeed, Fish->speed, delta * Fish->SeekDecelerationMultiplier);
 
 	// Set Rotation 
 	FRotator leaderRotation = FRotationMatrix::MakeFromX(Fish->getSeekTarget() - Fish->GetActorLocation()).Rotator();
@@ -40,28 +41,30 @@ void SeekState::SeekTarget(float delta)
 	Fish->setRotation(leaderRotation);
 
 	// Set Velocity Vector
-	FVector leaderVelocity = Fish->GetActorForwardVector() * (delta * Fish->speed);
+	FVector leaderVelocity = Fish->GetActorForwardVector() * (delta * Fish->curSpeed);
 	Fish->setVelocity(leaderVelocity);
 }
 
 void SeekState::Flock(float delta)
 {
 	// Get a list of Fish neighbors and calculate seperation
-	TArray<AActor*> neighborList = Fish->neighbors;
 	FVector seperation = FVector(0, 0, 0);
-	int neighborCount = 0;
-	for (int i = 0; i < neighborList.Num(); i++)
+	if (Fish->nearbyFriends.IsValidIndex(0))
 	{
-		float dist = neighborList[i]->GetDistanceTo(Fish);
-		if (dist < Fish->neighborSeperation)
+		TArray<AActor*> neighborList = Fish->nearbyFriends;
+		int neighborCount = 0;
+		for (int i = 0; i < Fish->NumNeighborsToEvaluate; i++)
 		{
-			seperation += neighborList[i]->GetActorLocation() - Fish->GetActorLocation();
-			neighborCount++;
+			if (neighborList.IsValidIndex(i))
+			{
+				seperation += neighborList[i]->GetActorLocation() - Fish->GetActorLocation();
+				neighborCount++;
+			}
 		}
+		seperation = ((seperation / neighborCount) * -1);
+		seperation.Normalize();
+		seperation *= Fish->neighborSeperation;
 	}
-	seperation = ((seperation / neighborCount) * -1);
-	seperation.Normalize();
-	seperation *= Fish->neighborSeperation;
 
 	// Maintain distance behind Leader
 	FVector distBehind = (Cast<AFlockFish>(Fish->leader)->getVelocity() * -1);
@@ -118,7 +121,7 @@ void FleeState::Update(float delta)
 void FleeState::FleeFromEnemy(float delta)
 {
 	// Set Speed
-	Fish->curSpeed = FMath::Lerp(Fish->curSpeed, Fish->maxSpeed, (delta * 2));
+	Fish->curSpeed = FMath::Lerp(Fish->curSpeed, Fish->maxSpeed, (delta * Fish->FleeAccelerationMultiplier));
 	
 	// Set Velocity
 	FVector fleeVelocity = Fish->GetActorForwardVector() * (delta * Fish->curSpeed);
@@ -160,28 +163,30 @@ void ChaseState::EatPrey()
 void ChaseState::ChasePrey(float delta)
 {
 	// Set Speed
-	Fish->curSpeed = FMath::Lerp(Fish->curSpeed, Fish->maxSpeed, (delta * 2));
+	Fish->curSpeed = FMath::Lerp(Fish->curSpeed, Fish->maxSpeed, (delta * Fish->ChaseAccelerationMultiplier));
 
 	// Set Velocity
 	FVector chaseVelocity = Fish->GetActorForwardVector() * (delta * Fish->curSpeed);
 	Fish->setVelocity(chaseVelocity);
 
 	// Set Rotation
-	TArray<AActor*> neighborList = Fish->neighbors;
 	FVector seperation = FVector(0, 0, 0);
-	int neighborCount = 0;
-	for (int i = 0; i < neighborList.Num(); i++)
+	if (Fish->nearbyFriends.IsValidIndex(0))
 	{
-		float dist = neighborList[i]->GetDistanceTo(Fish);
-		if (dist < Fish->neighborSeperation)
+		int neighborCount = 0;
+		TArray<AActor*> neighborList = Fish->nearbyFriends;
+		for (int i = 0; i < Fish->NumNeighborsToEvaluate; i++)
 		{
-			seperation += neighborList[i]->GetActorLocation() - Fish->GetActorLocation();
-			neighborCount++;
+			if (neighborList.IsValidIndex(i))
+			{
+				seperation += neighborList[i]->GetActorLocation() - Fish->GetActorLocation();
+				neighborCount++;
+			}
 		}
+		seperation = ((seperation / neighborCount) * -1);
+		seperation.Normalize();
+		seperation *= Fish->neighborSeperation;
 	}
-	seperation = ((seperation / neighborCount) * -1);
-	seperation.Normalize();
-	seperation *= Fish->neighborSeperation;
 
 	FVector preyLocation = Prey->GetActorLocation();
 	FVector flockerVelocity = preyLocation + seperation;

@@ -42,22 +42,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Fish Attributes")
 	UClass* neighborType;
 
-	// Player the fish will avoid
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Environment Variables")
-	UClass* playerType;
-
-	// volume that is considered underwater
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Environment Variables")
-	FVector underwaterMin = FVector(-40000, -40000, -9000);
-
-	// volume that is considered underwater
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Environment Variables")
-	FVector underwaterMax = FVector(40000, 40000, -950);
-
-	// Weight to multiply with cohesion
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Fish Attributes")
-	float neighborSeperation = 300.0;
-
 	// Distance to that fish will try to remain behind leader
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Fish Attributes")
 	float followDist = 50;
@@ -86,21 +70,65 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Fish Attributes")
 	float distBehindSpeedUpRange = 3000;
 
-	// When set to 0, update every tick, otherwise update after specified time
+	// Multiplies With Radius of Fish Interaction Sphere for neighbor seperation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Advanced Settings")
+	float SeperationDistanceMultiplier = 0.75;
+
+	// Multiplies With Radius of Fish Interaction Sphere for Flee Distance
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Advanced Settings")
+	float FleeDistanceMultiplier = 5;
+
+	// Multiplies with delta time since last tick when lerping to max speed (While Fleeing)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Advanced Settings")
+	float FleeAccelerationMultiplier = 2;
+
+	// Multiplies with delta time since last tick when lerping to max speed (While Chasing)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Advanced Settings")
+	float ChaseAccelerationMultiplier = 2;
+
+	// Multiplies with delta time since last tick when lerping to regular speed (While Seeking)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Advanced Settings")
+	float SeekDecelerationMultiplier = 1;
+
+	// Player the fish will avoid
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Environment Variables")
+	UClass* playerType;
+
+	// volume that is considered underwater
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Environment Variables")
+	FVector underwaterMin = FVector(-40000, -40000, -9000);
+
+	// volume that is considered underwater
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Environment Variables")
+	FVector underwaterMax = FVector(40000, 40000, -950);
+
+	// Custom Z range for targeting (NULL will use full range of min/max)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Environment Variables")
+	float CustomZSeekMin = NULL;
+
+	// Custom Z range for targeting (NULL will use full range of min/max)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Environment Variables")
+	float CustomZSeekMax = NULL;
+
+	// Max number of neighbors to evaluate on a Tick
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Optimization")
+	float NumNeighborsToEvaluate = 5;
+
+	// When set to 0, update every tick, otherwise update after specified time
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Optimization")
 	float UpdateEveryTick = 0;
 
-	// pursueDistance
-	// NOTE: Unused at the moment.
-	float pursueDist = 6000;
-
-	// Distance to realize fish is near bounds
-	// NOTE: Unused at the moment
-	float obstacleDist = 300.0f;
+	// This is the target the fish will path to
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TESTING")
+	FVector target;
 
 	// Flee distance
 	// NOTE: CURRENTLY SET IN CODE
-	float fleeDistance = 1500.0;
+	float fleeDistance = 0;
+
+	// Weight to multiply with cohesion
+	// NOTE: CURRENTLY SET IN CODE
+	float neighborSeperation = 300.0;
 
 	// current speed
 	float curSpeed = speed;
@@ -109,10 +137,10 @@ public:
 	AActor *leader;
 
 	// current prey in world
-	TArray<AActor*> prey;
+	//TArray<AActor*> prey;
 
 	// Enemies that fish will flee from
-	TArray<AActor*> enemies;
+	//TArray<AActor*> enemies;
 
 	// These are the fish's flocking buddies
 	TArray<AActor*> neighbors;
@@ -122,6 +150,9 @@ public:
 
 	// Nearby Prey
 	TArray<AActor*> nearbyPrey;
+
+	// Nearby Friends (non-threatning fish and neighbors)
+	TArray<AActor*> nearbyFriends;
 
 	// Flee target
 	AActor *fleeTarget;
@@ -221,8 +252,7 @@ protected:
 	// Are the array's setup?
 	bool isSetup = false;
 
-	// This is the target the fish will path to
-	FVector target;
+
 
 	// current hunger timer
 	float hungerTimer = 0.0f;
@@ -231,7 +261,7 @@ protected:
 	float updateTimer = 0.0f;
 
 	// player holder
-	AActor* player;
+	//AActor* player;
 
 	// has fish manager?
 	bool hasFishManager = false;

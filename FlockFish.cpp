@@ -1,4 +1,5 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Kyle Bryant @Komdoman
+// Use wherever your heart desires <3
 
 #include "OceanDemo.h"
 #include "FlockFish.h"
@@ -66,13 +67,27 @@ void AFlockFish::UpdateState(float delta)
 void AFlockFish::OnBeginOverlap(AActor* otherActor, UPrimitiveComponent* otherComp, int32 otherBodyIndex, bool bFromSweep, const FHitResult& sweepResult)
 {
 	// Is overlapping with enemy?
-	if (enemies.Find(otherActor) >= 0)
+	if (enemyTypes.Find(otherActor->GetClass()) >= 0)
 	{	
 		nearbyEnemies.Add(otherActor);
 	}
-	else if (prey.Find(otherActor) >= 0 && isFull == false && isFleeing == false)
+	else if (preyTypes.Find(otherActor->GetClass()) >= 0)
 	{	
-		nearbyPrey.Add(otherActor);
+		if (otherActor->GetClass() == this->GetClass())
+		{
+			if (!Cast<AFlockFish>(otherActor)->isLeader)
+			{
+				nearbyPrey.Add(otherActor);
+			}
+		}
+		else
+		{
+			nearbyPrey.Add(otherActor);
+		}
+	}
+	else if (otherActor->GetClass() == this->GetClass())
+	{
+		nearbyFriends.Add(otherActor);
 	}
 }
 
@@ -85,6 +100,10 @@ void AFlockFish::OnEndOverlap(AActor* otherActor, UPrimitiveComponent* otherComp
 	else if (nearbyPrey.Find(otherActor) >= 0)
 	{
 		nearbyPrey.Remove(otherActor);
+	}
+	else if (nearbyFriends.Find(otherActor) >= 0)
+	{
+		nearbyFriends.Remove(otherActor);
 	}
 }
 
@@ -145,7 +164,7 @@ void AFlockFish::MoveBounds()
 
 void AFlockFish::spawnTarget()
 {
-	target = FVector(FMath::FRandRange(underwaterMin.X, underwaterMax.X), FMath::FRandRange(underwaterMin.Y, underwaterMax.Y), FMath::FRandRange(underwaterMin.Z, underwaterMax.Z));
+	target = FVector(FMath::FRandRange(minX, maxX), FMath::FRandRange(minY, maxY), FMath::FRandRange(minZ, maxZ));
 }
 
 
@@ -156,30 +175,24 @@ void AFlockFish::Setup()
 	{
 		maxX = underwaterMax.X;
 		maxY = underwaterMax.Y;
-		maxZ = underwaterMax.Z;
 		minX = underwaterMin.X;
 		minY = underwaterMin.Y;
-		minZ = underwaterMin.Z;
 
-		fleeDistance = FishInteractionSphere->GetScaledSphereRadius() * 5;
+		if (CustomZSeekMax == NULL)
+		{
+			minZ = underwaterMin.Z;
+			maxZ = underwaterMax.Z;
+		}
+		else
+		{
+			minZ = CustomZSeekMin;
+			maxZ = CustomZSeekMax;
+		}
+
+		fleeDistance = FishInteractionSphere->GetScaledSphereRadius() * FleeDistanceMultiplier;
+		neighborSeperation = FishInteractionSphere->GetScaledSphereRadius() * SeperationDistanceMultiplier;
 
 		currentState = new SeekState(this);
-
-		// Setup Enemies
-		TArray<AActor*> aEnemyList;
-		for (int i = 0; i < enemyTypes.Num(); i++)
-		{
-			UGameplayStatics::GetAllActorsOfClass(this, enemyTypes[i], aEnemyList);
-			enemies.Append(aEnemyList);
-		}
-
-		// Setup Prey
-		TArray<AActor*> aPreyList;
-		for (int i = 0; i < preyTypes.Num(); i++)
-		{
-			UGameplayStatics::GetAllActorsOfClass(this, preyTypes[i], aPreyList);
-			prey.Append(aPreyList);
-		}
 
 		// Setup Neighbors
 		TArray<AActor*> aNeighborList;
@@ -193,6 +206,8 @@ void AFlockFish::Setup()
 				break;
 			}
 		}
+		nearbyFriends.Append(neighbors);
+
 
 		TArray<AActor*> aFishManagerList;
 		UGameplayStatics::GetAllActorsOfClass(this, AFishManager::StaticClass(), aFishManagerList);
@@ -202,13 +217,6 @@ void AFlockFish::Setup()
 			fishManager = aFishManagerList[0];
 		}
 
-		TArray<AActor*> aPlayerList;
-		UGameplayStatics::GetAllActorsOfClass(this, playerType, aPlayerList);
-		if (aPlayerList.Num() > 0)
-		{
-			enemies.Append(aPlayerList);
-			player = aPlayerList[0];
-			isSetup = true;
-		}
+		isSetup = true;
 	}
 }
