@@ -4,6 +4,7 @@
 #include "OceanDemo.h"
 #include "FlockFish.h"
 #include "FishManager.h"
+#define COLLISION_TRACE ECC_GameTraceChannel4
 
 
 AFlockFish::AFlockFish(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -31,8 +32,11 @@ void AFlockFish::Tick(float delta)
 	// NOTE TO SELF: consider creating a beginplay event that does this stuff (although beginplay is buggy as hell x.x)
 	Setup();
 
+	// If debug mode true, draw interaction sphere and avoiddistance
+	Debug();
+
 	// Move Bounds based on location of FishManager (if applicable)
-	MoveBounds();
+	MoveBounds(delta);
 
 	// Manage Timers (hungerTimer, updateTimer, and turnTimer)
 	ManageTimers(delta);
@@ -48,6 +52,99 @@ void AFlockFish::Tick(float delta)
 	this->AddActorWorldOffset(curVelocity);
 
 	Super::Tick(delta);
+}
+
+void AFlockFish::Debug()
+{
+	if (DebugMode)
+	{
+		FVector actorLocation = this->GetActorLocation();
+		FVector forwardVector = (this->GetActorForwardVector() * AvoidanceDistance) + actorLocation;
+		FVector forwardVector2 = (this->GetActorForwardVector() * (AvoidanceDistance * 0.1)) + actorLocation;
+
+		DrawDebugLine(
+			GetWorld(),
+			actorLocation,
+			forwardVector,
+			FColor::Magenta,
+			false, -1, 0,
+			10
+			);
+
+		FColor indicatorColor = FColor::Cyan;
+		if (nearbyEnemies.IsValidIndex(0))
+		{
+			indicatorColor = FColor::Red;
+		}
+		else if (nearbyPrey.IsValidIndex(0) && isFull == false)
+		{
+			indicatorColor = FColor::Green;
+		}
+		DrawDebugSphere(
+			GetWorld(),
+			actorLocation,
+			FishInteractionSphere->GetScaledSphereRadius(),
+			20,
+			indicatorColor
+			);
+		DrawDebugLine(
+			GetWorld(),
+			actorLocation,
+			forwardVector2,
+			indicatorColor,
+			true, 10, 0,
+			20
+			);
+	}
+
+}
+
+FVector AFlockFish::AvoidObstacle()
+{
+	FVector actorLocation = this->GetActorLocation();
+	FVector forwardVector = (this->GetActorForwardVector() * AvoidanceDistance) + actorLocation;
+
+	FHitResult OutHitResult;
+	FCollisionQueryParams Line(FName("Collision param"), true);
+	bool const bHadBlockingHit = GetWorld()->LineTraceSingle(OutHitResult, actorLocation, forwardVector, COLLISION_TRACE, Line);
+	FVector returnVector = FVector(0, 0, 0);
+	float distanceToBound = distanceToBound = (this->GetActorLocation() - OutHitResult.ImpactPoint).Size();
+	if (bHadBlockingHit)
+	{
+		if (OutHitResult.ImpactPoint.Z > this->GetActorLocation().Z + FishInteractionSphere->GetScaledSphereRadius())
+		{	
+			returnVector.Z += (1 / (distanceToBound * (1 / AvoidForceMultiplier))) * -1;
+		}
+		else if (OutHitResult.ImpactPoint.Z < this->GetActorLocation().Z - FishInteractionSphere->GetScaledSphereRadius())
+		{
+			returnVector.Z += (1 / (distanceToBound * (1 / AvoidForceMultiplier))) * 1;
+		}
+
+		if (OutHitResult.ImpactPoint.X > this->GetActorLocation().X)
+		{
+			returnVector.X += (1 / (distanceToBound * (1 / AvoidForceMultiplier))) * -1;
+		}
+		else if (OutHitResult.ImpactPoint.X < this->GetActorLocation().X)
+		{
+			
+			returnVector.X += (1 / (distanceToBound * (1 / AvoidForceMultiplier))) * 1;
+		}
+
+		if (OutHitResult.ImpactPoint.Y > this->GetActorLocation().Y)
+		{
+			returnVector.Y += (1 / (distanceToBound * (1 / AvoidForceMultiplier))) * -1;
+		}
+		else if (OutHitResult.ImpactPoint.Y < this->GetActorLocation().Y)
+		{
+
+			returnVector.Y  += (1 / (distanceToBound * (1 / AvoidForceMultiplier))) * 1;
+		}
+
+		returnVector.Normalize();
+		FVector avoidance = returnVector * AvoidanceForce;
+		return avoidance;
+	}
+	return FVector(0, 0, 0);
 }
 
 void AFlockFish::UpdateState(float delta)
@@ -150,7 +247,7 @@ void AFlockFish::ManageTimers(float delta)
 
 
 
-void AFlockFish::MoveBounds()
+void AFlockFish::MoveBounds(float delta)
 {
 	if (hasFishManager)
 	{
@@ -159,6 +256,36 @@ void AFlockFish::MoveBounds()
 		minX = fishManagerPosition.X - underwaterBoxLength;
 		maxY = fishManagerPosition.Y + underwaterBoxLength;
 		minY = fishManagerPosition.Y - underwaterBoxLength;
+
+		FVector actorLocation = this->GetActorLocation();
+		if (actorLocation.Z > underwaterMax.Z)
+		{	
+			actorLocation.Z = underwaterMin.Z + FMath::Abs((0.999 * underwaterMax.Z));
+		}
+		else if (actorLocation.Z < underwaterMin.Z)
+		{
+			actorLocation.Z = underwaterMin.Z + FMath::Abs((0.001 * underwaterMax.Z));
+		}
+
+		if (actorLocation.X > maxX)
+		{
+			actorLocation.X = minX + FMath::Abs((0.1 * maxX));
+		}
+		else if (actorLocation.X < minX)
+		{
+			actorLocation.X = maxX - FMath::Abs((0.1 * maxX));
+		}
+
+		if (actorLocation.Y > maxY)
+		{
+			actorLocation.Y = minY + FMath::Abs((0.1 * maxY));
+		}
+		else if (actorLocation.Y < minY)
+		{
+			actorLocation.Y = maxY - FMath::Abs((0.1 * maxY));
+		}
+
+		this->SetActorLocation(actorLocation);
 	}
 }
 
@@ -191,6 +318,7 @@ void AFlockFish::Setup()
 
 		fleeDistance = FishInteractionSphere->GetScaledSphereRadius() * FleeDistanceMultiplier;
 		neighborSeperation = FishInteractionSphere->GetScaledSphereRadius() * SeperationDistanceMultiplier;
+		AvoidanceDistance = FishInteractionSphere->GetScaledSphereRadius() * 2;
 
 		currentState = new SeekState(this);
 

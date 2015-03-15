@@ -5,7 +5,6 @@
 #include "FlockFish.h"
 #include "FishState.h"
 
-
 /////////////////////////////////////////////////////////////////////////////
 //////////////                                        //////////////////////            
 //////////////            Fish Seek State             /////////////////////                                 
@@ -36,7 +35,8 @@ void SeekState::SeekTarget(float delta)
 	Fish->curSpeed = FMath::Lerp(Fish->curSpeed, Fish->speed, delta * Fish->SeekDecelerationMultiplier);
 
 	// Set Rotation 
-	FRotator leaderRotation = FRotationMatrix::MakeFromX(Fish->getSeekTarget() - Fish->GetActorLocation()).Rotator();
+	FVector targetRotation = (Fish->getSeekTarget() - Fish->GetActorLocation() + Fish->AvoidObstacle());
+	FRotator leaderRotation = FRotationMatrix::MakeFromX(targetRotation).Rotator();
 	leaderRotation = FMath::RInterpTo(Fish->GetActorRotation(), leaderRotation, delta, Fish->turnSpeed);
 	Fish->setRotation(leaderRotation);
 
@@ -73,7 +73,7 @@ void SeekState::Flock(float delta)
 
 	// Calculate all seperation and distance behind leader into one vector
 	FVector leaderLocation = Fish->leader->GetActorLocation();
-	FVector flockerVelocity = distBehind + leaderLocation + seperation;
+	FVector flockerVelocity = distBehind + leaderLocation + seperation + Fish->AvoidObstacle();
 	FRotator flockerRotation = FRotationMatrix::MakeFromX(flockerVelocity - Fish->GetActorLocation()).Rotator();
 
 	// If fish is too far behind leader, speed up 
@@ -128,7 +128,8 @@ void FleeState::FleeFromEnemy(float delta)
 	Fish->setVelocity(fleeVelocity);
 
 	// Set Rotation
-	FRotator fleeRotation = FRotationMatrix::MakeFromX(Fish->GetActorLocation() - Enemy->GetActorLocation()).Rotator();
+	FVector targetRotation = (Fish->GetActorLocation() - Enemy->GetActorLocation()) + Fish->AvoidObstacle();
+	FRotator fleeRotation = FRotationMatrix::MakeFromX(targetRotation).Rotator();
 	fleeRotation = FMath::RInterpTo(Fish->GetActorRotation(), fleeRotation, delta, Fish->turnSpeed);
 	Fish->setRotation(fleeRotation);
 
@@ -189,8 +190,8 @@ void ChaseState::ChasePrey(float delta)
 	}
 
 	FVector preyLocation = Prey->GetActorLocation();
-	FVector flockerVelocity = preyLocation + seperation;
-	FRotator flockerRotation = FRotationMatrix::MakeFromX(flockerVelocity - Fish->GetActorLocation()).Rotator();
+	FVector flockerVelocity = ((preyLocation + seperation) - Fish->GetActorLocation()) + Fish->AvoidObstacle();
+	FRotator flockerRotation = FRotationMatrix::MakeFromX(flockerVelocity).Rotator();
 	FRotator chaseRotation = FMath::RInterpTo(Fish->GetActorRotation(), flockerRotation, delta, Fish->turnSpeed);
 	Fish->setRotation(chaseRotation);
 }

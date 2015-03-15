@@ -50,13 +50,12 @@ void AFishManager::setup()
 			int numFlocks = flockTypes.Num();
 			for (int i = 0; i < numFlocks; i++)
 			{
-				//FString TheFloatStr = FString::SanitizeFloat(FMath::FRandRange(minZ, maxZ));
-				//GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Red, *TheFloatStr);
 				FVector spawnLoc = FVector(FMath::FRandRange(minX, maxX), FMath::FRandRange(minY, maxY), FMath::FRandRange(minZ, maxZ));
 				for (int j = 0; j < numInFlock[i]; j++)
 				{
 					AFlockFish *aFish = Cast<AFlockFish>(world->SpawnActor(flockTypes[i]));
 					aFish->isLeader = false;
+					aFish->DebugMode = DebugMode;
 					aFish->underwaterMax = FVector(maxX, maxY, maxZ);
 					aFish->underwaterMin = FVector(minX, minY, minZ);
 					aFish->underwaterBoxLength = underwaterBoxLength;

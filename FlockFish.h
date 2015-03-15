@@ -90,6 +90,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Advanced Settings")
 	float SeekDecelerationMultiplier = 1;
 
+	// Avoid Distance Multiplier
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Advanced Settings")
+	float AvoidForceMultiplier = 1;
+
+	// Avoidance force
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Advanced Settings")
+	float AvoidanceForce = 20000;
+
 	// Player the fish will avoid
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Environment Variables")
 	UClass* playerType;
@@ -119,8 +127,11 @@ public:
 	float UpdateEveryTick = 0;
 
 	// This is the target the fish will path to
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TESTING")
 	FVector target;
+
+	// Run fish in debug mode
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TESTING")
+	bool DebugMode = true;
 
 	// Flee distance
 	// NOTE: CURRENTLY SET IN CODE
@@ -169,6 +180,10 @@ public:
 
 	/* bounds of underwater box*/
 	float underwaterBoxLength = 10000;
+
+	FVector AvoidObstacle();
+
+	float AvoidanceDistance = 5000;
 
 	// Max bounds of box
 	float maxX;
@@ -226,7 +241,7 @@ protected:
 	void ChooseState();
 
 	/* Move Bounds */
-	void MoveBounds();
+	void MoveBounds(float delta);
 
 	UFUNCTION()
 	void OnBeginOverlap(AActor* otherActor, UPrimitiveComponent* otherComp, int32 otherBodyIndex, bool bFromSweep, const FHitResult& sweepResult);
@@ -240,6 +255,9 @@ protected:
 	/* places the target randomly within the postprocessvolume*/
 	void spawnTarget();
 
+	/* Does a bunch of debug stuff if debug mode is active*/
+	void Debug();
+
 	// current velocity
 	FVector curVelocity = FVector(0, 0, 0);
 
@@ -251,8 +269,6 @@ protected:
 
 	// Are the array's setup?
 	bool isSetup = false;
-
-
 
 	// current hunger timer
 	float hungerTimer = 0.0f;

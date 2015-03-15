@@ -42,6 +42,10 @@ public:
 
 	// Player Type
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
+	bool DebugMode = false;
+
+	// Player Type
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Config)
 	UClass* playerType;
 
 	// Player
