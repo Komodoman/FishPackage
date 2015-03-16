@@ -305,6 +305,8 @@ void AFlockFish::Setup()
 		minX = underwaterMin.X;
 		minY = underwaterMin.Y;
 
+		InteractionSphereRadius = FishInteractionSphere->GetScaledSphereRadius();
+
 		if (CustomZSeekMax == NULL)
 		{
 			minZ = underwaterMin.Z;
@@ -322,21 +324,6 @@ void AFlockFish::Setup()
 
 		currentState = new SeekState(this);
 
-		// Setup Neighbors
-		TArray<AActor*> aNeighborList;
-		UGameplayStatics::GetAllActorsOfClass(this, neighborType, aNeighborList);
-		neighbors.Append(aNeighborList);
-		for (int i = 0; i < neighbors.Num(); i++)
-		{
-			if (Cast<AFlockFish>(neighbors[i])->isLeader)
-			{
-				leader = neighbors[i];
-				break;
-			}
-		}
-		nearbyFriends.Append(neighbors);
-
-
 		TArray<AActor*> aFishManagerList;
 		UGameplayStatics::GetAllActorsOfClass(this, AFishManager::StaticClass(), aFishManagerList);
 		if (aFishManagerList.Num() > 0)
@@ -344,6 +331,24 @@ void AFlockFish::Setup()
 			hasFishManager = true;
 			fishManager = aFishManagerList[0];
 		}
+
+		// Setup Neighbors
+		if (!fishManager)
+		{
+			TArray<AActor*> aNeighborList;
+			UGameplayStatics::GetAllActorsOfClass(this, neighborType, aNeighborList);
+			neighbors.Append(aNeighborList);
+			for (int i = 0; i < neighbors.Num(); i++)
+			{
+				if (Cast<AFlockFish>(neighbors[i])->isLeader)
+				{
+					leader = neighbors[i];
+					break;
+				}
+			}
+		}
+		//nearbyFriends.Append(neighbors);
+
 
 		isSetup = true;
 	}

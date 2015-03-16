@@ -53,12 +53,17 @@ void SeekState::Flock(float delta)
 	{
 		TArray<AActor*> neighborList = Fish->nearbyFriends;
 		int neighborCount = 0;
-		for (int i = 0; i < Fish->NumNeighborsToEvaluate; i++)
+		for (int i = 0; i < Fish->nearbyFriends.Num(); i++)
 		{
 			if (neighborList.IsValidIndex(i))
 			{
 				seperation += neighborList[i]->GetActorLocation() - Fish->GetActorLocation();
 				neighborCount++;
+			}
+
+			if (i == Fish->NumNeighborsToEvaluate && i != 0)
+			{
+				break;
 			}
 		}
 		seperation = ((seperation / neighborCount) * -1);

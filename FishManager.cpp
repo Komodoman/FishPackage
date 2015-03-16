@@ -51,6 +51,7 @@ void AFishManager::setup()
 			for (int i = 0; i < numFlocks; i++)
 			{
 				FVector spawnLoc = FVector(FMath::FRandRange(minX, maxX), FMath::FRandRange(minY, maxY), FMath::FRandRange(minZ, maxZ));
+				AFlockFish *leaderFish = NULL;
 				for (int j = 0; j < numInFlock[i]; j++)
 				{
 					AFlockFish *aFish = Cast<AFlockFish>(world->SpawnActor(flockTypes[i]));
@@ -59,9 +60,15 @@ void AFishManager::setup()
 					aFish->underwaterMax = FVector(maxX, maxY, maxZ);
 					aFish->underwaterMin = FVector(minX, minY, minZ);
 					aFish->underwaterBoxLength = underwaterBoxLength;
+					spawnLoc = FVector(FMath::FRandRange(minX, maxX), FMath::FRandRange(minY, maxY), FMath::FRandRange(minZ, maxZ));
 					if (j == 0)
 					{
 						aFish->isLeader = true;
+						leaderFish = aFish;
+					}
+					else if (leaderFish != NULL)
+					{	
+						aFish->leader = leaderFish;
 					}
 					aFish->SetActorLocation(spawnLoc);
 				}

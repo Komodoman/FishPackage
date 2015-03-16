@@ -118,7 +118,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Environment Variables")
 	float CustomZSeekMax = NULL;
 
-	// Max number of neighbors to evaluate on a Tick
+	// Max number of neighbors to evaluate on a Tick (0 for all neighbors)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Optimization")
 	float NumNeighborsToEvaluate = 5;
 
@@ -128,6 +128,8 @@ public:
 
 	// This is the target the fish will path to
 	FVector target;
+
+	float InteractionSphereRadius;
 
 	// Run fish in debug mode
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TESTING")
